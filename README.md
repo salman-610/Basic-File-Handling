@@ -42,8 +42,8 @@ A Python-based file handling system inspired by the world of Game of Thrones. Th
 
 ### 1. Clone the repository
 
-    git clone YOUR_GITHUB_REPOSITORY_URL
-    cd file_handler_project
+    git clone https://github.com/salman-610/Basic-File-Handling.git
+    cd Basic-File-Handling
 
 Replace `YOUR_GITHUB_REPOSITORY_URL` with your repository's URL.
 
