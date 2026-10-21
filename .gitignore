@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.py[cod]
+.vscode/
+royal_scrolls/*.tmp
+royal_scrolls/*.bak
