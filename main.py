@@ -427,7 +427,7 @@ def find_and_replace_words():
         count = 0
 
         if choice == "1":
-            # TITLE: Find and replace whole words.
+            
             current_title = lines[title_index][
                 len("Title: "):
             ].rstrip("\r\n")
@@ -492,7 +492,7 @@ def find_and_replace_words():
             )
 
         elif choice == "2":
-            # ISSUED BY: Replace the complete issuer name.
+            
             new_issuer = input(
                 "Enter the complete new issuer name: "
             ).strip()
@@ -516,7 +516,7 @@ def find_and_replace_words():
             )
 
         else:
-            # CONTENT: Find and replace whole words in the body only.
+            
             search_word = input("Enter the word to find in the content: ")
 
             if not search_word or search_word.isspace():
@@ -564,7 +564,7 @@ def find_and_replace_words():
             file.write(updated_text)
 
         try:
-            # Preserve the original until the database transaction succeeds.
+            
             os.replace(original_path, backup_path)
             backup_created = True
 
@@ -636,7 +636,7 @@ def find_and_replace_words():
         if choice in ("1", "3"):
             print(f"Whole-word replacements: {count}")
 
-        # The database commit succeeded; remove the backup.
+        
         try:
             if backup_created and os.path.exists(backup_path):
                 os.remove(backup_path)

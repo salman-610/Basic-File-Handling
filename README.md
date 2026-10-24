@@ -1,76 +1,116 @@
+Basic File Handling
 
-# Royal Archives of Westeros 🐉
+Theme - Royal Archives of Westeros
 
-A Python-based file handling system inspired by the world of Game of Thrones. The application manages royal documents using text files and MySQL database integration.
+Royal Archives of Westeros is a Python-based document management application inspired by the world of Game of Thrones. It combines text-file operations with MySQL database integration to create, store, organize, and retrieve royal documents.
 
-## Features
+Features
 
-- Create and issue royal decrees.
-- View the royal document registry.
-- Read documents using their unique IDs.
-- Find and replace whole words in document titles and contents.
-- Update the issuer of a document.
-- Record document activities in Maester's Chronicle.
-- Handle invalid inputs, missing files, and database errors.
+- Issue Royal Decrees: Create new royal documents and save their contents as text files.
+- Royal Registry: View registered documents and their details from the MySQL database.
+- Read Documents: Retrieve and read documents using their unique document IDs.
+- Document Editing: Find and replace whole words in document titles and contents.
+- Issuer Management: Update the person or authority responsible for issuing a document.
+- Activity Tracking: Record document operations in Maester's Chronicle.
+- Error Handling: Handle invalid inputs, missing files, duplicate filenames, and database connection errors.
 
-## Technologies Used
-
-- Python
-- MySQL
-- MySQL Connector for Python
-- Regular Expressions
-- File Handling (TXT files)
-
-## Project Structure
-
-    file_handler_project/
-    ├── main.py
-    ├── database.sql
-    ├── requirements.txt
-    ├── README.md
-    ├── .gitignore
-    └── royal_scrolls/
-
-## Prerequisites
+Technologies Used
 
 - Python 3
-- MySQL Server
-- MySQL Workbench (recommended)
-- Git (for version control)
+- MySQL
+- MySQL Connector/Python
+- Regular Expressions (`re`)
+- File Handling (`os`)
+- Git and GitHub
 
-## Setup Instructions
+Project Structure
 
-### 1. Clone the repository
 
-    git clone https://github.com/salman-610/Basic-File-Handling.git
-    cd Basic-File-Handling
+file_handler_project/
+├── main.py
+├── README.md
+├── requirements.txt
+├── .gitignore
+└── royal_scrolls/
+    └── [Royal document text files]
 
-Replace `YOUR_GITHUB_REPOSITORY_URL` with your repository's URL.
 
-### 2. Install dependencies
+*Note: The structure above represents the main project files. Add `database.sql` if you create and maintain a database setup script.*
 
-    py -m pip install -r requirements.txt
+Prerequisites
 
-### 3. Set up the database
+Before running the application, ensure you have:
 
-Open `database.sql` in MySQL Workbench and execute the script.
+- Python 3 installed
+- MySQL Server installed and running
+- MySQL Workbench (recommended for database management)
+- Git installed
+- A MySQL account with permission to access the project database
 
-### 4. Configure your MySQL password
+Installation and Setup
 
-In Windows Command Prompt, enter:
+1. Clone the Repository:
 
-    set MYSQL_PASSWORD=your_actual_mysql_password
 
-Replace the placeholder with your own MySQL password. Never publish your password.
+git clone https://github.com/salman-610/Basic-File-Handling.git
+cd Basic-File-Handling
 
-### 5. Run the application
 
-    py main.py
+2. Install Dependencies:
 
-## Learning Objectives
+Install the required Python packages:
 
-This project demonstrates Python file input/output, string manipulation, regular expressions, exception handling, and database integration.
 
-## Author
+py -m pip install -r requirements.txt
+
+
+3. Configure the MySQL Database:
+
+Create a database named `royal_archives` and configure the required tables:
+
+- `royal_documents` — stores document details and filenames.
+- `maester_chronicle` — stores a history of document activities.
+
+Ensure the table definitions match those expected by `main.py`. If you maintain a `database.sql` file, you can use it to create the database structure.
+
+4. Configure the MySQL Password:
+
+The application reads the MySQL password from an environment variable named `MYSQL_PASSWORD`.
+
+In Windows Command Prompt, run:
+
+cmd
+set MYSQL_PASSWORD=your_actual_mysql_password
+
+
+Replace the example value with your own MySQL password. Keep your password private and never commit it to GitHub.
+
+This command applies to the current Command Prompt session.
+
+5. Run the Application:
+
+From the project directory, execute:
+
+
+py main.py
+```
+
+Follow the on-screen menu to manage royal documents.
+
+Learning Objectives:
+
+This project provides practical experience with:
+
+- Reading and writing text files in Python
+- Organizing files and managing filenames
+- Using regular expressions for text replacement
+- Connecting Python applications to MySQL
+- Executing SQL queries and managing database records
+- Handling exceptions and validating user input
+- Tracking application activities
+- Using Git and GitHub for version control
+
+Author:
 
 Salman A
+
