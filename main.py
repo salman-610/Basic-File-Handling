@@ -10,7 +10,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARCHIVES_DIR = os.path.join(BASE_DIR, "royal_scrolls")
 
 
-
 def connect_database():
     """Connect to the Royal Archives database."""
     try:
@@ -31,7 +30,6 @@ def connect_database():
     except Error as error:
         print(f"Database connection failed: {error}")
         return None
-
 
 
 def log_action(cursor, title, action, details):
@@ -124,7 +122,6 @@ def get_document(cursor):
         """,
         (document_id,)
     )
-
     document = cursor.fetchone()
 
     if document is None:
@@ -172,7 +169,11 @@ def issue_royal_decree():
         cursor = connection.cursor()
 
         cursor.execute(
-            "SELECT document_id FROM royal_documents WHERE file_name = %s",
+            """
+            SELECT document_id
+            FROM royal_documents
+            WHERE file_name = %s
+            """,
             (file_name,)
         )
 
@@ -207,7 +208,6 @@ def issue_royal_decree():
             )
 
             connection.commit()
-
             print("\nThe royal decree has been issued successfully!")
 
         except Exception:
@@ -241,7 +241,6 @@ def view_royal_registry():
             return
 
         cursor = connection.cursor()
-
         cursor.execute(
             """
             SELECT document_id, document_title,
@@ -425,9 +424,9 @@ def find_and_replace_words():
         updated_file_name = file_name
         details = ""
         count = 0
+        new_issuer = None
 
         if choice == "1":
-            
             current_title = lines[title_index][
                 len("Title: "):
             ].rstrip("\r\n")
@@ -492,7 +491,6 @@ def find_and_replace_words():
             )
 
         elif choice == "2":
-            
             new_issuer = input(
                 "Enter the complete new issuer name: "
             ).strip()
@@ -516,7 +514,6 @@ def find_and_replace_words():
             )
 
         else:
-            
             search_word = input("Enter the word to find in the content: ")
 
             if not search_word or search_word.isspace():
@@ -564,7 +561,6 @@ def find_and_replace_words():
             file.write(updated_text)
 
         try:
-            
             os.replace(original_path, backup_path)
             backup_created = True
 
@@ -593,10 +589,7 @@ def find_and_replace_words():
                     SET issued_by = %s
                     WHERE document_id = %s
                     """,
-                    (
-                        new_issuer,
-                        document_id
-                    )
+                    (new_issuer, document_id)
                 )
 
             log_action(
@@ -636,7 +629,6 @@ def find_and_replace_words():
         if choice in ("1", "3"):
             print(f"Whole-word replacements: {count}")
 
-        
         try:
             if backup_created and os.path.exists(backup_path):
                 os.remove(backup_path)
@@ -683,7 +675,6 @@ def view_maesters_chronicle():
             return
 
         cursor = connection.cursor()
-
         cursor.execute(
             """
             SELECT entry_id, document_title, action, details, action_time
