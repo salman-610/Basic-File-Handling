@@ -35,7 +35,7 @@ file_handler_project/
     └── [Royal document text files]
 
 
-*Note: The structure above represents the main project files. Add `database.sql` if you create and maintain a database setup script.*
+Note: The structure above represents the main project files. Add `database.sql` if you create and maintain a database setup script.
 
 Prerequisites
 
@@ -93,7 +93,7 @@ From the project directory, execute:
 
 
 py main.py
-```
+
 
 Follow the on-screen menu to manage royal documents.
 
