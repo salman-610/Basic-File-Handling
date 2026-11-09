@@ -3,22 +3,13 @@ import os
 import re
 import mysql.connector
 from pathlib import Path
-from datetime import datetime
 
-
-# ==========================================
-# ROYAL ARCHIVES - CONFIGURATION
-# ==========================================
 
 BASE_DIR = Path(__file__).resolve().parent
-SCROLLS_DIR = BASE_DIR / "royal_scrolls"
+DOCUMENTS_DIR = BASE_DIR / "decree_vault"
 
 
-# ==========================================
-# DATABASE CONNECTION
-# ==========================================
-
-def connect_database():
+def open_database():
     password = os.getenv("MYSQL_PASSWORD")
 
     if not password:
@@ -27,62 +18,38 @@ def connect_database():
         return None
 
     try:
-        connection = mysql.connector.connect(
+        return mysql.connector.connect(
             host="localhost",
             user="root",
             password=password,
             database="royal_archives"
         )
-
-        return connection
-
     except mysql.connector.Error as error:
         print(f"\nDatabase connection failed: {error}")
         return None
 
 
-# ==========================================
-# DATABASE ACTIVITY LOGGING
-# ==========================================
-
-def log_activity(cursor, document_title, action, details):
+def record_activity(cursor, title, action, details):
     query = """
         INSERT INTO maester_chronicle
         (document_title, action, details)
         VALUES (%s, %s, %s)
     """
-
-    cursor.execute(
-        query,
-        (document_title, action, details)
-    )
+    cursor.execute(query, (title, action, details))
 
 
-# ==========================================
-# FILE NAME GENERATION
-# ==========================================
+def create_safe_filename(title):
+    cleaned_title = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", title)
+    cleaned_title = cleaned_title.strip().rstrip(".")
 
-def generate_filename(title):
-    filename = re.sub(
-        r'[<>:"/\\|?*\x00-\x1f]',
-        "",
-        title
-    )
+    if not cleaned_title:
+        cleaned_title = "Untitled Decree"
 
-    filename = filename.strip().rstrip(".")
-
-    if not filename:
-        filename = "Untitled Royal Decree"
-
-    return filename + ".txt"
+    return cleaned_title + ".txt"
 
 
-# ==========================================
-# ISSUE A ROYAL DECREE
-# ==========================================
-
-def issue_royal_decree():
-    print("\n--- ISSUE A ROYAL DECREE ---")
+def issue_decree():
+    print("\n--- CREATE A NEW DECREE ---")
 
     title = input("Enter the document title: ").strip()
     issuer = input("Issued by: ").strip()
@@ -92,16 +59,15 @@ def issue_royal_decree():
         print("\nAll fields are required.")
         return
 
-    filename = generate_filename(title)
-    file_path = SCROLLS_DIR / filename
+    filename = create_safe_filename(title)
+    DOCUMENTS_DIR.mkdir(exist_ok=True)
+    file_path = DOCUMENTS_DIR / filename
 
     if file_path.exists():
         print("\nA document with this filename already exists.")
         return
 
-    SCROLLS_DIR.mkdir(exist_ok=True)
-
-    document_content = (
+    document_text = (
         "THE ROYAL ARCHIVES OF WESTEROS\n"
         "===================================\n"
         f"Title: {title}\n"
@@ -110,16 +76,21 @@ def issue_royal_decree():
         f"{content}\n"
     )
 
-    connection = connect_database()
+    connection = open_database()
 
     if connection is None:
         return
 
+    cursor = None
+    file_created = False
+
     try:
         cursor = connection.cursor()
 
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(document_content)
+        with open(file_path, "w", encoding="utf-8") as document_file:
+            document_file.write(document_text)
+
+        file_created = True
 
         query = """
             INSERT INTO royal_documents
@@ -132,87 +103,86 @@ def issue_royal_decree():
             (title, filename, "Royal Decree", issuer)
         )
 
-        log_activity(
+        record_activity(
             cursor,
             title,
             "CREATE",
-            "A new royal decree was issued."
+            "A new decree was created."
         )
 
         connection.commit()
 
-        print("\nRoyal decree successfully issued!")
+        print("\nDecree created successfully.")
         print(f"Document ID: {cursor.lastrowid}")
         print(f"File: {filename}")
 
     except Exception as error:
         connection.rollback()
 
-        if file_path.exists():
+        if file_created and file_path.exists():
             file_path.unlink()
 
-        print(f"\nUnable to issue the decree: {error}")
+        print(f"\nUnable to create the decree: {error}")
 
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+
         connection.close()
 
 
-# ==========================================
-# VIEW THE ROYAL REGISTRY
-# ==========================================
+def display_registry():
+    print("\n--- DOCUMENT REGISTRY ---")
 
-def view_royal_registry():
-    print("\n--- ROYAL REGISTRY ---")
-
-    connection = connect_database()
+    connection = open_database()
 
     if connection is None:
         return
 
+    cursor = None
+
     try:
         cursor = connection.cursor()
 
-        query = """
+        cursor.execute(
+            """
             SELECT document_id, document_title,
                    document_type, issued_by, created_at
             FROM royal_documents
             ORDER BY document_id
-        """
+            """
+        )
 
-        cursor.execute(query)
-        records = cursor.fetchall()
+        documents = cursor.fetchall()
 
-        if not records:
-            print("\nNo royal documents found.")
+        if not documents:
+            print("\nNo documents are available.")
             return
 
-        for record in records:
+        for document in documents:
             print("\n-----------------------------------")
-            print(f"ID: {record[0]}")
-            print(f"Title: {record[1]}")
-            print(f"Type: {record[2]}")
-            print(f"Issued by: {record[3]}")
-            print(f"Created at: {record[4]}")
+            print(f"ID: {document[0]}")
+            print(f"Title: {document[1]}")
+            print(f"Type: {document[2]}")
+            print(f"Issued by: {document[3]}")
+            print(f"Created at: {document[4]}")
 
         print("\n-----------------------------------")
 
     except mysql.connector.Error as error:
-        print(f"\nUnable to retrieve registry: {error}")
+        print(f"\nUnable to retrieve the registry: {error}")
 
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+
         connection.close()
 
 
-# ==========================================
-# READ A ROYAL DOCUMENT
-# ==========================================
+def open_decree():
+    print("\n--- OPEN A DOCUMENT ---")
 
-def read_royal_document():
-    print("\n--- READ A ROYAL DOCUMENT ---")
-
-    connection = connect_database()
+    connection = open_database()
 
     if connection is None:
         return
@@ -230,14 +200,14 @@ def read_royal_document():
             """
         )
 
-        records = cursor.fetchall()
+        documents = cursor.fetchall()
 
-        if not records:
+        if not documents:
             print("\nNo documents are available.")
             return
 
-        for record in records:
-            print(f"ID: {record[0]} | {record[1]}")
+        for document in documents:
+            print(f"ID: {document[0]} | {document[1]}")
 
         try:
             document_id = int(input("\nEnter the document ID: "))
@@ -254,38 +224,38 @@ def read_royal_document():
             (document_id,)
         )
 
-        document = cursor.fetchone()
+        selected_document = cursor.fetchone()
 
-        if document is None:
+        if selected_document is None:
             print("\nDocument not found.")
             return
 
-        title, filename = document
-        file_path = SCROLLS_DIR / filename
+        title, filename = selected_document
+        file_path = DOCUMENTS_DIR / filename
 
-        if not file_path.exists():
+        if not file_path.is_file():
             print("\nThe document file could not be found.")
             return
 
-        with open(file_path, "r", encoding="utf-8") as file:
-            content = file.read()
+        with open(file_path, "r", encoding="utf-8") as document_file:
+            document_text = document_file.read()
 
-        print("\n========== ROYAL DOCUMENT ==========")
-        print(content)
-        print("====================================")
+        print("\n========== DOCUMENT ==========")
+        print(document_text)
+        print("==============================")
 
-        log_activity(
+        record_activity(
             cursor,
             title,
             "READ",
-            "Royal document viewed."
+            "The document was opened."
         )
 
         connection.commit()
 
     except Exception as error:
         connection.rollback()
-        print(f"\nUnable to read document: {error}")
+        print(f"\nUnable to open the document: {error}")
 
     finally:
         if cursor:
@@ -294,23 +264,42 @@ def read_royal_document():
         connection.close()
 
 
-# ==========================================
-# FIND AND REPLACE WORDS
-# ==========================================
+def locate_document_sections(document_lines):
+    title_position = None
+    issuer_position = None
+    body_separator_position = None
 
-def find_and_replace_words():
-    print("\n--- CONSULT THE ROYAL ARCHIVES ---")
+    for position, line in enumerate(document_lines):
+        current_line = line.strip()
 
-    connection = connect_database()
+        if current_line.startswith("Title:"):
+            title_position = position
+
+        elif current_line.startswith("Issued by:"):
+            issuer_position = position
+
+    if issuer_position is not None:
+        for position in range(issuer_position + 1, len(document_lines)):
+            if re.fullmatch(r"=+", document_lines[position].strip()):
+                body_separator_position = position
+                break
+
+    return title_position, issuer_position, body_separator_position
+
+
+def replace_document_text():
+    print("\n--- MODIFY A DOCUMENT ---")
+
+    connection = open_database()
 
     if connection is None:
         return
 
     cursor = None
-    original_content = None
-    file_path = None
-    new_file_path = None
+    source_path = None
+    destination_path = None
     backup_path = None
+    original_text = None
 
     try:
         cursor = connection.cursor()
@@ -323,19 +312,17 @@ def find_and_replace_words():
             """
         )
 
-        records = cursor.fetchall()
+        documents = cursor.fetchall()
 
-        if not records:
+        if not documents:
             print("\nNo documents are available.")
             return
 
-        for record in records:
-            print(f"ID: {record[0]} | {record[1]}")
+        for document in documents:
+            print(f"ID: {document[0]} | {document[1]}")
 
         try:
-            document_id = int(
-                input("\nEnter the document ID: ")
-            )
+            document_id = int(input("\nEnter the document ID: "))
         except ValueError:
             print("\nPlease enter a valid document ID.")
             return
@@ -349,212 +336,144 @@ def find_and_replace_words():
             (document_id,)
         )
 
-        document = cursor.fetchone()
+        selected_document = cursor.fetchone()
 
-        if document is None:
+        if selected_document is None:
             print("\nDocument not found.")
             return
 
-        old_title, filename = document
-        file_path = SCROLLS_DIR / filename
+        old_title, filename = selected_document
+        source_path = DOCUMENTS_DIR / filename
 
-        if not file_path.exists():
+        if not source_path.is_file():
             print("\nThe document file could not be found.")
             return
 
-        with open(file_path, "r", encoding="utf-8") as file:
-            original_content = file.read()
+        with open(source_path, "r", encoding="utf-8") as document_file:
+            original_text = document_file.read()
 
-        print("\n--- CHOOSE A SECTION TO MODIFY ---")
-        print("1. Title")
+        document_lines = original_text.splitlines()
+
+        title_position, issuer_position, separator_position = (
+            locate_document_sections(document_lines)
+        )
+
+        if (
+            title_position is None
+            or issuer_position is None
+            or separator_position is None
+        ):
+            print("\nThe document structure is not recognised.")
+            print("Check that the title, issuer and separator lines exist.")
+            return
+
+        print("\nSelect the section to modify:")
+        print("1. Document title")
         print("2. Issued by")
-        print("3. Content")
+        print("3. Document content")
 
-        section_choice = input(
-            "\nChoose a section (1-3): "
-        ).strip()
+        section_choice = input("\nEnter your choice (1-3): ").strip()
 
         if section_choice not in ("1", "2", "3"):
-            print("\nInvalid section choice.")
+            print("\nInvalid selection.")
             return
 
-        lines = original_content.splitlines()
+        current_title = document_lines[title_position].split(":", 1)[1].strip()
+        current_issuer = document_lines[issuer_position].split(":", 1)[1].strip()
 
-        title_index = None
-        issuer_index = None
-        separator_index = None
-
-        # Locate the title and issuer lines.
-        for index, line in enumerate(lines):
-            stripped_line = line.strip()
-
-            if stripped_line.startswith("Title:"):
-                title_index = index
-
-            elif stripped_line.startswith("Issued by:"):
-                issuer_index = index
-
-        # Locate the separator after the issuer.
-        if issuer_index is not None:
-            for index in range(issuer_index + 1, len(lines)):
-                if re.fullmatch(r"=+", lines[index].strip()):
-                    separator_index = index
-                    break
-
-        # Validate the document structure.
-        if (
-            title_index is None
-            or issuer_index is None
-            or separator_index is None
-        ):
-            print(
-                "\nThe document section boundaries "
-                "could not be identified."
-            )
-            print("Please check the separator lines in the text file.")
-            return
-
-        current_title = lines[title_index].split(":", 1)[1].strip()
-        current_issuer = lines[issuer_index].split(":", 1)[1].strip()
-
-        updated_title = current_title
-        updated_issuer = current_issuer
-        updated_lines = lines.copy()
-
-        # ----------------------------------
-        # TITLE REPLACEMENT
-        # ----------------------------------
+        revised_title = current_title
+        revised_issuer = current_issuer
+        revised_lines = document_lines.copy()
 
         if section_choice == "1":
             print(f"\nCurrent title: {current_title}")
 
-            find_word = input(
-                "Enter the word to find: "
-            ).strip()
+            search_text = input("Word to find: ").strip()
+            replacement_text = input("Replace with: ").strip()
 
-            replacement = input(
-                "Enter the replacement word: "
-            ).strip()
-
-            if not find_word:
-                print("\nThe search word cannot be empty.")
+            if not search_text:
+                print("\nThe search text cannot be empty.")
                 return
 
-            updated_title, count = re.subn(
-                rf"\b{re.escape(find_word)}\b",
-                replacement,
+            revised_title, replacements = re.subn(
+                rf"\b{re.escape(search_text)}\b",
+                lambda match: replacement_text,
                 current_title,
                 flags=re.IGNORECASE
             )
 
-            if count == 0:
+            if replacements == 0:
                 print("\nThe specified word was not found in the title.")
                 return
 
-            updated_lines[title_index] = f"Title: {updated_title}"
-
-        # ----------------------------------
-        # ISSUER REPLACEMENT
-        # ----------------------------------
+            revised_lines[title_position] = f"Title: {revised_title}"
 
         elif section_choice == "2":
             print(f"\nCurrent issuer: {current_issuer}")
 
-            updated_issuer = input(
-                "Enter the new issuer name: "
-            ).strip()
+            revised_issuer = input("Enter the new issuer name: ").strip()
 
-            if not updated_issuer:
-                print("\nIssuer name cannot be empty.")
+            if not revised_issuer:
+                print("\nThe issuer name cannot be empty.")
                 return
 
-            if updated_issuer == current_issuer:
+            if revised_issuer == current_issuer:
                 print("\nThe issuer name has not changed.")
                 return
 
-            updated_lines[issuer_index] = (
-                f"Issued by: {updated_issuer}"
-            )
+            revised_lines[issuer_position] = f"Issued by: {revised_issuer}"
 
-        # ----------------------------------
-        # CONTENT REPLACEMENT
-        # ----------------------------------
+        else:
+            content_start = separator_position + 1
+            current_content = "\n".join(revised_lines[content_start:])
 
-        elif section_choice == "3":
-            content_start = separator_index + 1
+            search_text = input("\nWord to find in the content: ").strip()
+            replacement_text = input("Replace with: ").strip()
 
-            document_content = "\n".join(
-                updated_lines[content_start:]
-            )
-
-            find_word = input(
-                "\nEnter the word to find: "
-            ).strip()
-
-            replacement = input(
-                "Enter the replacement word: "
-            ).strip()
-
-            if not find_word:
-                print("\nThe search word cannot be empty.")
+            if not search_text:
+                print("\nThe search text cannot be empty.")
                 return
 
-            updated_content, count = re.subn(
-                rf"\b{re.escape(find_word)}\b",
-                replacement,
-                document_content,
+            revised_content, replacements = re.subn(
+                rf"\b{re.escape(search_text)}\b",
+                lambda match: replacement_text,
+                current_content,
                 flags=re.IGNORECASE
             )
 
-            if count == 0:
+            if replacements == 0:
                 print("\nThe specified word was not found in the content.")
                 return
 
-            updated_lines = (
-                updated_lines[:content_start]
-                + updated_content.split("\n")
+            revised_lines = (
+                revised_lines[:content_start] + revised_content.split("\n")
             )
 
-        # ----------------------------------
-        # PREPARE UPDATED DOCUMENT
-        # ----------------------------------
+        revised_text = "\n".join(revised_lines)
 
-        updated_document = "\n".join(updated_lines)
+        if original_text.endswith("\n"):
+            revised_text += "\n"
 
-        if original_content.endswith("\n"):
-            updated_document += "\n"
-
-        # Generate a new filename if the title changed.
         new_filename = filename
 
         if section_choice == "1":
-            new_filename = generate_filename(updated_title)
+            new_filename = create_safe_filename(revised_title)
 
-        new_file_path = SCROLLS_DIR / new_filename
+        destination_path = DOCUMENTS_DIR / new_filename
 
-        if (
-            new_file_path != file_path
-            and new_file_path.exists()
-        ):
-            print(
-                "\nA file with the updated title "
-                "already exists. Update cancelled."
-            )
+        if destination_path != source_path and destination_path.exists():
+            print("\nA file with the revised title already exists.")
+            print("The update has been cancelled.")
             return
 
-        # Create a backup before modifying the document.
-        backup_path = file_path.with_suffix(
-            file_path.suffix + ".bak"
-        )
+        backup_path = source_path.with_suffix(source_path.suffix + ".bak")
 
-        with open(backup_path, "w", encoding="utf-8") as backup:
-            backup.write(original_content)
+        with open(backup_path, "w", encoding="utf-8") as backup_file:
+            backup_file.write(original_text)
 
-        # Write the updated document.
-        with open(new_file_path, "w", encoding="utf-8") as file:
-            file.write(updated_document)
+        with open(destination_path, "w", encoding="utf-8") as document_file:
+            document_file.write(revised_text)
 
-        # Update the database.
         if section_choice == "1":
             cursor.execute(
                 """
@@ -562,7 +481,7 @@ def find_and_replace_words():
                 SET document_title = %s, file_name = %s
                 WHERE document_id = %s
                 """,
-                (updated_title, new_filename, document_id)
+                (revised_title, new_filename, document_id)
             )
 
         elif section_choice == "2":
@@ -572,60 +491,55 @@ def find_and_replace_words():
                 SET issued_by = %s
                 WHERE document_id = %s
                 """,
-                (updated_issuer, document_id)
+                (revised_issuer, document_id)
             )
 
-        section_names = {
+        section_labels = {
             "1": "Title",
-            "2": "Issued by",
+            "2": "Issuer",
             "3": "Content"
         }
 
-        log_activity(
+        record_activity(
             cursor,
-            updated_title,
+            revised_title,
             "REPLACE",
-            f"{section_names[section_choice]} section updated."
+            f"{section_labels[section_choice]} section modified."
         )
 
         connection.commit()
 
-        # Remove the old file after a successful title update.
-        if new_file_path != file_path and file_path.exists():
-            file_path.unlink()
+        if destination_path != source_path and source_path.exists():
+            source_path.unlink()
 
         if backup_path.exists():
             backup_path.unlink()
 
-        print("\nDocument updated successfully!")
-        print(f"Updated section: {section_names[section_choice]}")
+        print("\nDocument updated successfully.")
+        print(f"Updated section: {section_labels[section_choice]}")
 
         if section_choice == "1":
-            print(f"New title: {updated_title}")
+            print(f"New title: {revised_title}")
 
         elif section_choice == "2":
-            print(f"New issuer: {updated_issuer}")
+            print(f"New issuer: {revised_issuer}")
 
     except Exception as error:
         connection.rollback()
 
-        # Restore the original file if an update fails.
-        if backup_path and backup_path.exists():
+        if backup_path and backup_path.exists() and source_path:
             try:
-                if new_file_path and new_file_path != file_path:
-                    if new_file_path.exists():
-                        new_file_path.unlink()
+                if destination_path and destination_path != source_path:
+                    if destination_path.exists():
+                        destination_path.unlink()
 
-                with open(file_path, "w", encoding="utf-8") as file:
-                    file.write(original_content)
+                with open(source_path, "w", encoding="utf-8") as document_file:
+                    document_file.write(original_text)
 
                 backup_path.unlink()
 
             except OSError as restore_error:
-                print(
-                    "\nWarning: Could not restore the original file: "
-                    f"{restore_error}"
-                )
+                print(f"\nWarning: file recovery failed: {restore_error}")
 
         print(f"\nUnable to update the document: {error}")
 
@@ -636,106 +550,91 @@ def find_and_replace_words():
         connection.close()
 
 
-# ==========================================
-# CONSULT MAESTER'S CHRONICLE
-# ==========================================
+def show_activity_history():
+    print("\n--- ACTIVITY HISTORY ---")
 
-def consult_maesters_chronicle():
-    print("\n--- MAESTER'S CHRONICLE ---")
-
-    connection = connect_database()
+    connection = open_database()
 
     if connection is None:
         return
 
+    cursor = None
+
     try:
         cursor = connection.cursor()
 
-        query = """
-            SELECT entry_id, document_title,
-                   action, details, action_time
+        cursor.execute(
+            """
+            SELECT entry_id, document_title, action, details, action_time
             FROM maester_chronicle
             ORDER BY entry_id DESC
-        """
+            """
+        )
 
-        cursor.execute(query)
-        records = cursor.fetchall()
+        entries = cursor.fetchall()
 
-        if not records:
-            print("\nNo activity records found.")
+        if not entries:
+            print("\nNo activity records were found.")
             return
 
-        for record in records:
+        for entry in entries:
             print("\n-----------------------------------")
-            print(f"Entry ID: {record[0]}")
-            print(f"Document: {record[1]}")
-            print(f"Action: {record[2]}")
-            print(f"Details: {record[3]}")
-            print(f"Time: {record[4]}")
+            print(f"Entry ID: {entry[0]}")
+            print(f"Document: {entry[1]}")
+            print(f"Action: {entry[2]}")
+            print(f"Details: {entry[3]}")
+            print(f"Time: {entry[4]}")
 
         print("\n-----------------------------------")
 
     except mysql.connector.Error as error:
-        print(f"\nUnable to retrieve Chronicle: {error}")
+        print(f"\nUnable to retrieve activity history: {error}")
 
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+
         connection.close()
 
 
-# ==========================================
-# MAIN MENU
-# ==========================================
-
-def main():
-    SCROLLS_DIR.mkdir(exist_ok=True)
+def run_archive_console():
+    DOCUMENTS_DIR.mkdir(exist_ok=True)
 
     while True:
         print("\n===================================")
-        print("   THE ROYAL ARCHIVES OF WESTEROS")
+        print("       THE ROYAL ARCHIVES")
         print("===================================")
-        print("Welcome, Your Grace!\n")
+        print("1. Create a new decree")
+        print("2. Display document registry")
+        print("3. Open a document")
+        print("4. Find and replace text")
+        print("5. View activity history")
+        print("6. Exit")
 
-        print("1. Issue a Royal Decree")
-        print("2. View the Royal Registry")
-        print("3. Read a Royal Document")
-        print("4. Find and Replace Words")
-        print("5. Consult Maester's Chronicle")
-        print("6. Leave the Royal Archives")
-
-        choice = input(
-            "\nYour command, Your Grace: "
-        ).strip()
+        choice = input("\nSelect an option (1-6): ").strip()
 
         if choice == "1":
-            issue_royal_decree()
+            issue_decree()
 
         elif choice == "2":
-            view_royal_registry()
+            display_registry()
 
         elif choice == "3":
-            read_royal_document()
+            open_decree()
 
         elif choice == "4":
-            find_and_replace_words()
+            replace_document_text()
 
         elif choice == "5":
-            consult_maesters_chronicle()
+            show_activity_history()
 
         elif choice == "6":
-            print(
-                "\nThe Royal Archives are closed. "
-                "Until we meet again, Your Grace!"
-            )
+            print("\nThe archive session has ended.")
             break
 
         else:
-            print("\nInvalid command. Please choose between 1 and 6.")
+            print("\nInvalid selection. Choose a number from 1 to 6.")
 
-
-# ==========================================
-# APPLICATION ENTRY POINT
-# ==========================================
 
 if __name__ == "__main__":
-    main()
+    run_archive_console()

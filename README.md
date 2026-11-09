@@ -1,116 +1,129 @@
-Basic File Handling
+Royal Archives of Westeros
 
-Theme - Royal Archives of Westeros
+Project Overview
 
-Royal Archives of Westeros is a Python-based document management application inspired by the world of Game of Thrones. It combines text-file operations with MySQL database integration to create, store, organize, and retrieve royal documents.
+Royal Archives of Westeros is a Python-based document management application that combines file handling and MySQL database operations.
 
-Features
+The application allows users to create and manage royal documents, retrieve stored records, modify document sections, and maintain an activity history.
 
-- Issue Royal Decrees: Create new royal documents and save their contents as text files.
-- Royal Registry: View registered documents and their details from the MySQL database.
-- Read Documents: Retrieve and read documents using their unique document IDs.
-- Document Editing: Find and replace whole words in document titles and contents.
-- Issuer Management: Update the person or authority responsible for issuing a document.
-- Activity Tracking: Record document operations in Maester's Chronicle.
-- Error Handling: Handle invalid inputs, missing files, duplicate filenames, and database connection errors.
+It demonstrates the practical use of Python, SQL, file operations, database connectivity, input validation, and error handling in a command-line application.
+
+Key Features
+
+- Issue a Royal Decree: Create a text document and store its details in the database.
+- View the Royal Registry: Retrieve and display registered documents.
+- Read a Royal Document: Access document content using its database ID.
+- Find and Replace Words: Modify the title, issuer, or content of an existing document.
+- Maester's Chronicle: Review recorded document activities.
+- File and Database Integration: Maintain document content as text files and associated information in MySQL.
 
 Technologies Used
 
-- Python 3
-- MySQL
-- MySQL Connector/Python
-- Regular Expressions (`re`)
-- File Handling (`os`)
-- Git and GitHub
+| Component | Technology |
+|---|---|
+| Programming Language | Python |
+| Database | MySQL |
+| Database Client | MySQL Workbench |
+| Database Connector | MySQL Connector/Python |
+| Development Environment | Visual Studio Code |
+| Document Storage | Text Files |
 
 Project Structure
 
-
 file_handler_project/
+│
 ├── main.py
-├── README.md
+├── database.sql
 ├── requirements.txt
+├── README.md
 ├── .gitignore
-└── royal_scrolls/
-    └── [Royal document text files]
+│
+└── decree_vault/
+    └── The_Iron_Throne_Proclamation.txt
 
 
-Note: The structure above represents the main project files. Add `database.sql` if you create and maintain a database setup script.
+The 'decree_vault' directory stores document files created by the application. Additional documents are generated as new decrees are issued.
+
+Database Design
+
+The application uses the 'royal_archives' database with two tables.
+
+1. royal_documents
+
+Stores document information, including its ID, title, filename, document type, issuer, and creation timestamp.
+
+2. maester_chronicle
+
+Maintains an activity history containing the document title, action performed, additional details, and timestamp.
+
+The database structure is provided in 'database.sql' so that it can be recreated independently of the development environment.
+
+Setup and Execution
 
 Prerequisites
 
-Before running the application, ensure you have:
+- Python 3 installed.
+- MySQL Server installed and running.
+- MySQL Workbench or another MySQL client for database administration.
+- Access to a MySQL account with permission to create databases and tables.
 
-- Python 3 installed
-- MySQL Server installed and running
-- MySQL Workbench (recommended for database management)
-- Git installed
-- A MySQL account with permission to access the project database
+1. Obtain the Project
 
-Installation and Setup
+Download or clone the repository and open the extracted project directory in Visual Studio Code or another suitable development environment.
 
-1. Clone the Repository:
+2. Prepare the Database
 
+Execute the SQL statements in 'database.sql' using MySQL Workbench or the MySQL command-line client.
 
-git clone https://github.com/salman-610/Basic-File-Handling.git
-cd Basic-File-Handling
+This creates the 'royal_archives' database and the tables required by the application.
 
+3. Configure Database Credentials
 
-2. Install Dependencies:
+The application reads the MySQL password from the 'MYSQL_PASSWORD' environment variable.
 
-Install the required Python packages:
+Configure this variable using the credentials of the local MySQL account. Do not place database passwords directly in the source code or commit them to the repository.
 
+For Windows PowerShell, the variable can be configured for the current terminal session before launching the application.
+
+4. Install Dependencies
+
+Install the packages listed in 'requirements.txt':
 
 py -m pip install -r requirements.txt
 
 
-3. Configure the MySQL Database:
+5. Launch the Application
 
-Create a database named `royal_archives` and configure the required tables:
-
-- `royal_documents` — stores document details and filenames.
-- `maester_chronicle` — stores a history of document activities.
-
-Ensure the table definitions match those expected by `main.py`. If you maintain a `database.sql` file, you can use it to create the database structure.
-
-4. Configure the MySQL Password:
-
-The application reads the MySQL password from an environment variable named `MYSQL_PASSWORD`.
-
-In Windows Command Prompt, run:
-
-cmd
-set MYSQL_PASSWORD=your_actual_mysql_password
-
-
-Replace the example value with your own MySQL password. Keep your password private and never commit it to GitHub.
-
-This command applies to the current Command Prompt session.
-
-5. Run the Application:
-
-From the project directory, execute:
-
+From the project root directory, execute:
 
 py main.py
 
 
-Follow the on-screen menu to manage royal documents.
+The command-line menu provides access to the application's document management features.
 
-Learning Objectives:
+Application Workflow
 
-This project provides practical experience with:
+The application uses MySQL to store document metadata and activity records, while the actual document content is maintained in text files within 'decree_vault'.
 
-- Reading and writing text files in Python
-- Organizing files and managing filenames
-- Using regular expressions for text replacement
-- Connecting Python applications to MySQL
-- Executing SQL queries and managing database records
-- Handling exceptions and validating user input
-- Tracking application activities
-- Using Git and GitHub for version control
+When a document is created, its content is written to a file and its associated information is registered in MySQL. Subsequent operations use the document ID to locate the corresponding database record and file.
 
-Author:
+Document modifications update the relevant file and database information. Activities are recorded in the Maester's Chronicle.
 
-Salman A
+Important Notes
 
+- MySQL Server must be running before launching the application.
+- The database must be initialized using 'database.sql' before application use.
+- A valid 'MYSQL_PASSWORD' environment variable is required.
+- The application expects the 'decree_vault' directory to be available in the project folder.
+- The project does not include a copy of the developer's local MySQL database or credentials.
+- Existing document files should be retained when transferring or submitting the project.
+
+Purpose of the Project
+
+This project was developed to demonstrate how a Python application can interact with a relational database while managing external files.
+
+It provides practical experience with SQL operations, Python database connectivity, file handling, data retrieval, record modification, and activity logging.
+
+
+Author
+Salman
